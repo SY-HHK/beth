@@ -2,10 +2,12 @@
 pragma solidity ^0.6.0;
 
 import "./Validator.sol";
+import "./@openzeppelin/contracts/math/SafeMath.sol";
 
 contract Bet {
 
     Validator public validator;
+    BethToken public bethToken;
 
     struct Match {
         string title;
@@ -13,6 +15,12 @@ contract Bet {
         string team1;
         string team2;
         uint matchDate;
+
+        mapping (address => uint) team1UserBetAmount;
+        mapping (address => uint) team2UserBetAmount;
+        uint team1TotalBetAmount;
+        uint team2TotalBetAmount;
+
         mapping (address => uint) pickedWinner;
         mapping (address => bool) isValidator;
         address[20] validators;
@@ -23,6 +31,7 @@ contract Bet {
 
     constructor(Validator _validator) public {
         validator = _validator;
+        bethToken = _validator.bethToken();
 
         //create default empty match
         actualMatch.title = "";
@@ -30,7 +39,9 @@ contract Bet {
         actualMatch.team1 = "";
         actualMatch.team2 = "";
         actualMatch.matchDate = 0;
-        actualMatch.winner = 0;
+        actualMatch.winner = 1;
+        actualMatch.team1TotalBetAmount = 0;
+        actualMatch.team2TotalBetAmount = 0;
     }
 
     function createMatch(string memory _title, string memory _gameName, string memory _team1, string memory _team2, uint _matchDate) public {
@@ -46,6 +57,8 @@ contract Bet {
         actualMatch.team2 = _team2;
         actualMatch.matchDate = _matchDate;
         actualMatch.winner = 0;
+        actualMatch.team1TotalBetAmount = 0;
+        actualMatch.team2TotalBetAmount = 0;
         resetValidators();
     }
 
@@ -68,7 +81,7 @@ contract Bet {
         require(_team == 1 || _team == 2, "Please pick a valid team : team 1 or team 2 !");
         require(actualMatch.pickedWinner[msg.sender] == 0, "You already voted !");
 
-        actualMatch.pickedWinner[msg.sender] = team;
+        actualMatch.pickedWinner[msg.sender] = _team;
     }
 
     function finishMatch() public {
@@ -94,13 +107,53 @@ contract Bet {
             if (actualMatch.pickedWinner[actualMatch.validators[i]] != actualMatch.winner) {
                 punish(actualMatch.validators[i], 100); //punish for not voting false 100 tokens
             }
+            else {
+                reward(actualMatch.validators[i], actualMatch.team1TotalBetAmount + actualMatch.team2TotalBetAmount); //reward good voters with percentage of total bet
+            }
         }
     }
 
+    // TODO implement punish in validator with owner
     function punish(address _validator, uint _amount) private {
         validator.stackingBalance(_validator) -= _amount; //punished for not voting
         if (validator.stackingBalance(_validator) < validator.validatorMinimalStack) {
             validator.isValidator(_validator) = false;
+        }
+    }
+
+    function betOnTeam(uint _team, uint _amount) public {
+        require(_team == 1 || _team == 2, "Please bet on a valid team !");
+        require(actualMatch.matchDate > block.timestamp + 1 hours, "it's to late to bet on this match !");
+        if (bethToken.transferFrom(msg.sender, address(this), _amount)) {
+            if (_team == 1) {
+                actualMatch.team1TotalBetAmount += _amount;
+                actualMatch.team1UserBetAmount[msg.sender] += _amount;
+            }
+            else {
+                actualMatch.team2TotalBetAmount += _amount;
+                actualMatch.team2UserBetAmount[msg.sender] += _amount;
+            }
+        }
+    }
+
+    function getReward() public {
+        require(actualMatch.winner != 0, "Winner not picked yet !");
+        uint ratio;
+        uint amountForValidators;
+        uint deservedAmount;
+        if (actualMatch.winner == 1) {
+            require(actualMatch.team1UserBetAmount > 0, "You bet 0 on the winner, no reward available !");
+            amountForValidators = SafeMath.div(actualMatch.team1TotalBetAmount, 20); //5% for validators
+            ratio = SafeMath.div(actualMatch.team1TotalBetAmount - amountForValidators, actualMatch.team1UserBetAmount);
+            deservedAmount = SafeMath.div(actualMatch.team2TotalBetAmount, ratio);
+            bethToken.transferFrom(address(this), msg.sender, deservedAmount);
+        }
+        else {
+            require(actualMatch.team2UserBetAmount > 0, "You bet 0 on the winner, no reward available !");
+            amountForValidators = SafeMath.div(actualMatch.team2TotalBetAmount, 20); //5% for validators
+            ratio = SafeMath.div(actualMatch.team2TotalBetAmount - amountForValidators, actualMatch.team2UserBetAmount);
+            deservedAmount = SafeMath.div(actualMatch.team1TotalBetAmount, ratio);
+            bethToken.transferFrom(address(this), msg.sender, deservedAmount);
         }
     }
 
