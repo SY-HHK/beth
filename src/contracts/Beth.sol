@@ -4,7 +4,7 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./BethToken.sol";
 
-contract Bet is Ownable {
+contract Beth is Ownable {
 
     BethToken public bethToken;
 

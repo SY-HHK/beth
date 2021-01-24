@@ -1,5 +1,5 @@
 const BethToken = artifacts.require('BethToken')
-const Bet = artifacts.require('Bet')
+const Beth = artifacts.require('Beth')
 
 module.exports = async function(deployer, network, accounts) {
   // Deploy BethToken
@@ -7,6 +7,6 @@ module.exports = async function(deployer, network, accounts) {
   const bethToken = await BethToken.deployed()
 
   // Deploy Beth
-  await deployer.deploy(Bet, bethToken.address)
-  const bet = await Bet.deployed()
+  await deployer.deploy(Beth, bethToken.address)
+  const beth = await Beth.deployed()
 }

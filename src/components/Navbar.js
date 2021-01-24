@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import farmer from '../farmer.png'
+import farmer from '../eth-logo.png'
 
 class Navbar extends Component {
 
@@ -13,7 +13,7 @@ class Navbar extends Component {
           rel="noopener noreferrer"
         >
           <img src={farmer} width="30" height="30" className="d-inline-block align-top" alt="" />
-          &nbsp; DApp Token Farm
+          &nbsp; BETH - DECENTRALIZED BET
         </a>
 
         <ul className="navbar-nav px-3">
