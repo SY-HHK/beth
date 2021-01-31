@@ -76,21 +76,21 @@ class App extends Component {
     }
 
     createMatch = (title, gameName, team1, team2, matchDate) => {
-        this.state({loading: true});
-        this.state.methods.createMatch(title, gameName, team1, team2, matchDate).send({from: this.state.account}).on('transactionHash', (hash) => {
+        this.setState({loading: true})
+        this.state.beth.methods.createMatch(title, gameName, team1, team2, matchDate).send({from: this.state.account}).on('transactionHash', (hash) => {
             this.setState({loading: false})
         })
     }
 
     finishMatch = () => {
-        this.state({loading: true});
+        this.setState({loading: true})
         this.state.methods.finishMatch().send({from: this.state.account}).on('transactionHash', (hash) => {
             this.setState({loading: false})
         })
     }
 
     pickWinner = (teamNumber) => {
-        this.state({loading: true});
+        this.setState({loading: true})
         this.state.methods.pickWinner(teamNumber).send({from: this.state.account}).on('transactionHash', (hash) => {
             this.setState({loading: false})
         })
@@ -106,14 +106,14 @@ class App extends Component {
     }
 
     getReward = () => {
-        this.state({loading: true});
+        this.setState({loading: true})
         this.state.methods.getReward().send({from: this.state.account}).on('transactionHash', (hash) => {
             this.setState({loading: false})
         })
     }
 
     reindex = () => {
-        this.state({loading: true});
+        this.setState({loading: true})
         this.state.methods.reindex().send({from: this.state.account}).on('transactionHash', (hash) => {
             this.setState({loading: false})
         })
@@ -149,6 +149,7 @@ class App extends Component {
                 stackTokens={this.stackTokens}
                 unstackTokens={this.stackTokens}
                 betOnTeam={this.betOnTeam}
+                createMatch={this.createMatch}
                 displayDate={this.displayDate}
             />
         }

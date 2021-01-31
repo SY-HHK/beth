@@ -68,7 +68,7 @@ class Main extends Component {
                             this.props.betOnTeam(team, amount)
                         }}>
                             <div>
-                                <label className="float-left"><b>stack Tokens</b></label>
+                                <label className="float-left"><b>Choose a team</b></label>
                                 <span className="float-right text-muted">
                                 Balance: {window.web3.utils.fromWei(this.props.bethTokenBalance, 'Ether')}
                                 </span>
@@ -114,7 +114,7 @@ class Main extends Component {
                             this.props.stackTokens(amount)
                         }}>
                             <div>
-                                <label className="float-left"><b>stack Tokens</b></label>
+                                <label className="float-left"><b>stack Tokens and become validator (1000 tokens)</b></label>
                                 <span className="float-right text-muted">
                                 Balance: {window.web3.utils.fromWei(this.props.bethTokenBalance, 'Ether')}
                                 </span>
@@ -149,6 +149,75 @@ class Main extends Component {
                             }}>
                             UN-stack...
                         </button>
+                    </div>
+                </div>
+
+                <div className="card mb-4">
+                    <div className="card-body">
+                        <h5 className="card-title text-center">Create Match</h5>
+
+                        <form className="mb-3" onSubmit={(event) => {
+                            event.preventDefault()
+                            let title,gameName, team1, team2, matchDate
+                            title = this.title.value.toString()
+                            gameName = this.gameName.value.toString()
+                            team1 = this.team1.value.toString()
+                            team2 = this.team2.value.toString()
+                            matchDate = parseInt(this.matchDate.toString(), 10) / 1000
+                            this.props.createMatch(title, gameName, team1, team2, matchDate)
+                        }}>
+                            <div className="input-group mb-4">
+                                <input
+                                    type="text"
+                                    ref={(title) => {
+                                        this.title = title
+                                    }}
+                                    className="form-control form-control-lg"
+                                    placeholder="Match title"
+                                    required/>
+                            </div>
+                            <div className="input-group mb-4">
+                                <input
+                                    type="text"
+                                    ref={(gameName) => {
+                                        this.gameName = gameName
+                                    }}
+                                    className="form-control form-control-lg"
+                                    placeholder="Match game name"
+                                    required/>
+                            </div>
+                            <div className="input-group mb-4">
+                                <input
+                                    type="text"
+                                    ref={(team1) => {
+                                        this.team1 = team1
+                                    }}
+                                    className="form-control form-control-lg"
+                                    placeholder="Team 1 name"
+                                    required/>
+                            </div>
+                            <div className="input-group mb-4">
+                                <input
+                                    type="text"
+                                    ref={(team2) => {
+                                        this.team2 = team2
+                                    }}
+                                    className="form-control form-control-lg"
+                                    placeholder="Team 2 name"
+                                    required/>
+                            </div>
+                            <div className="input-group mb-4">
+                                <input
+                                    type="text"
+                                    ref={(matchDate) => {
+                                        this.matchDate = matchDate
+                                    }}
+                                    className="form-control form-control-lg"
+                                    placeholder="Timestamp of match start date"
+                                    required/>
+                            </div>
+                            <button type="submit" className="btn btn-primary btn-block btn-lg">Create match</button>
+                        </form>
                     </div>
                 </div>
 
