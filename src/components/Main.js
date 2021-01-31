@@ -24,6 +24,24 @@ class Main extends Component {
                 <div className="card mb-4">
 
                     <div className="card-body">
+                        <button
+                            type="submit"
+                            className="btn btn-link btn-block btn-sm"
+                            onClick={(event) => {
+                                event.preventDefault()
+                                let amount
+                                amount = this.input.value.toString()
+                                amount = window.web3.utils.toWei(amount, 'Ether')
+                                this.props.unstackTokens(amount)
+                            }}>
+                            Create BET
+                        </button>
+                    </div>
+                </div>
+
+                <div className="card mb-4">
+
+                    <div className="card-body">
 
                         <form className="mb-3" onSubmit={(event) => {
                             event.preventDefault()
@@ -35,8 +53,8 @@ class Main extends Component {
                             <div>
                                 <label className="float-left"><b>stack Tokens</b></label>
                                 <span className="float-right text-muted">
-                  Balance: {window.web3.utils.fromWei(this.props.bethTokenBalance, 'Ether')}
-                </span>
+                                Balance: {window.web3.utils.fromWei(this.props.bethTokenBalance, 'Ether')}
+                                </span>
                             </div>
                             <div className="input-group mb-4">
                                 <input
