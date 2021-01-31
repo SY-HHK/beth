@@ -39,6 +39,8 @@ class App extends Component {
             this.setState({beth})
             let stackingBalance = await beth.methods.stackingBalance(this.state.account).call()
             this.setState({stackingBalance: stackingBalance.toString()})
+            let actualMatch = await beth.methods.actualMatch().call()
+            this.setState({actualMatch:actualMatch})
         } else {
             window.alert('Beth contract not deployed to detected network.')
         }
@@ -73,6 +75,55 @@ class App extends Component {
         })
     }
 
+    createMatch = (title, gameName, team1, team2, matchDate) => {
+        this.state({loading: true});
+        this.state.methods.createMatch(title, gameName, team1, team2, matchDate).send({from: this.state.account}).on('transactionHash', (hash) => {
+            this.setState({loading: false})
+        })
+    }
+
+    finishMatch = () => {
+        this.state({loading: true});
+        this.state.methods.finishMatch().send({from: this.state.account}).on('transactionHash', (hash) => {
+            this.setState({loading: false})
+        })
+    }
+
+    pickWinner = (teamNumber) => {
+        this.state({loading: true});
+        this.state.methods.pickWinner(teamNumber).send({from: this.state.account}).on('transactionHash', (hash) => {
+            this.setState({loading: false})
+        })
+    }
+
+    betOnTeam = (teamNumber, amount) => {
+        this.setState({loading: true})
+        this.state.bethToken.methods.approve(this.state.beth._address, amount).send({from: this.state.account}).on('transactionHash', (hash) => {
+            this.state.beth.methods.betOnTeam(teamNumber, amount).send({from: this.state.account}).on('transactionHash', (hash) => {
+                this.setState({loading: false})
+            })
+        })
+    }
+
+    getReward = () => {
+        this.state({loading: true});
+        this.state.methods.getReward().send({from: this.state.account}).on('transactionHash', (hash) => {
+            this.setState({loading: false})
+        })
+    }
+
+    reindex = () => {
+        this.state({loading: true});
+        this.state.methods.reindex().send({from: this.state.account}).on('transactionHash', (hash) => {
+            this.setState({loading: false})
+        })
+    }
+
+    displayDate = (timestamp) => {
+        let date = new Date(timestamp * 1000);
+        return date.getUTCDate()+'/'+(date.getUTCMonth()+1)+'/'+date.getFullYear()+' '+date.getUTCHours()+':'+date.getUTCMinutes();
+    }
+
     constructor(props) {
         super(props)
         this.state = {
@@ -81,6 +132,7 @@ class App extends Component {
             beth: {},
             bethTokenBalance: '0',
             stackingBalance: '0',
+            actualMatch:{},
             loading: true
         }
     }
@@ -93,8 +145,11 @@ class App extends Component {
             content = <Main
                 bethTokenBalance={this.state.bethTokenBalance}
                 stackingBalance={this.state.stackingBalance}
+                actualMatch={this.state.actualMatch}
                 stackTokens={this.stackTokens}
                 unstackTokens={this.stackTokens}
+                betOnTeam={this.betOnTeam}
+                displayDate={this.displayDate}
             />
         }
 

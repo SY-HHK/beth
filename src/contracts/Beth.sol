@@ -26,7 +26,7 @@ contract Beth is Ownable {
         uint winner;
     }
 
-    Match actualMatch;
+    Match public actualMatch;
 
     uint TIME_AMOUNT = 1 minutes;
 
@@ -34,11 +34,11 @@ contract Beth is Ownable {
         bethToken = _bethToken;
 
         //create default empty match
-        actualMatch.title = "";
-        actualMatch.gameName = "";
-        actualMatch.team1 = "";
-        actualMatch.team2 = "";
-        actualMatch.matchDate = 0;
+        actualMatch.title = "Hugo vs Gorille";
+        actualMatch.gameName = "Combat à main nus";
+        actualMatch.team1 = "Hugo";
+        actualMatch.team2 = "Gorille";
+        actualMatch.matchDate = 1612128600;
         actualMatch.winner = 1;
         actualMatch.team1TotalBetAmount = 0;
         actualMatch.team2TotalBetAmount = 0;
@@ -94,7 +94,7 @@ contract Beth is Ownable {
         }
     }
 
-    function pickValidators() public returns (address[20] memory) {
+    function pickValidators() private returns (address[20] memory) {
         uint random = randomFromBlock();
         uint randomValidator;
         for (uint i = 0; i < 20; i +=1) {

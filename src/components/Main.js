@@ -22,20 +22,83 @@ class Main extends Component {
                 </table>
 
                 <div className="card mb-4">
-
                     <div className="card-body">
-                        <button
-                            type="submit"
-                            className="btn btn-link btn-block btn-sm"
-                            onClick={(event) => {
-                                event.preventDefault()
-                                let amount
-                                amount = this.input.value.toString()
-                                amount = window.web3.utils.toWei(amount, 'Ether')
-                                this.props.unstackTokens(amount)
-                            }}>
-                            Create BET
-                        </button>
+                        <h5 className="card-title text-center">Actual Match</h5>
+                        <table className="table text-center">
+                            <thead>
+                            <tr>
+                                <th scope="col">Title</th>
+                                <th scope="col">Game</th>
+                                <th scope="col">Team 1</th>
+                                <th scope="col">Team 2</th>
+                                <th scope="col">Match date</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th>{this.props.actualMatch.title}</th>
+                                <td>{this.props.actualMatch.gameName}</td>
+                                <td>{this.props.actualMatch.team1}</td>
+                                <td>{this.props.actualMatch.team2}</td>
+                                <td>{this.props.displayDate(this.props.actualMatch.matchDate)}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <table className="table text-center">
+                            <thead>
+                            <tr>
+                                <th scope="col">Beth token on team 1</th>
+                                <th scope="col">Beth token on team 2</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>{window.web3.utils.fromWei(this.props.actualMatch.team1TotalBetAmount, 'Ether')} $Beth</td>
+                                <td>{window.web3.utils.fromWei(this.props.actualMatch.team2TotalBetAmount, 'Ether')} $Beth</td>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                        <form className="mb-3" onSubmit={(event) => {
+                            event.preventDefault()
+                            let amount,team
+                            amount = this.amount.value.toString()
+                            team = this.team.value.toString()
+                            amount = window.web3.utils.toWei(amount, 'Ether')
+                            this.props.betOnTeam(team, amount)
+                        }}>
+                            <div>
+                                <label className="float-left"><b>stack Tokens</b></label>
+                                <span className="float-right text-muted">
+                                Balance: {window.web3.utils.fromWei(this.props.bethTokenBalance, 'Ether')}
+                                </span>
+                            </div>
+                            <div className="input-group mb-4">
+                                <input
+                                    type="int"
+                                    ref={(team) => {
+                                        this.team = team
+                                    }}
+                                    className="form-control form-control-lg"
+                                    placeholder="Team number (1/2)"
+                                    required/>
+                                <input
+                                    type="text"
+                                    ref={(amount) => {
+                                        this.amount = amount
+                                    }}
+                                    className="form-control form-control-lg"
+                                    placeholder="Amount (0+)"
+                                    required/>
+                                <div className="input-group-append">
+                                    <div className="input-group-text">
+                                        <img src={bethLogo} height='32' alt=""/>
+                                        &nbsp;&nbsp;&nbsp; beth
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" className="btn btn-primary btn-block btn-lg">Bet!</button>
+                        </form>
                     </div>
                 </div>
 
