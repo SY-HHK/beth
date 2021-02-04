@@ -20,9 +20,10 @@ contract Beth is Ownable {
         uint team1TotalBetAmount;
         uint team2TotalBetAmount;
 
-        mapping (address => uint) pickedWinner;
-        mapping (address => bool) isValidator;
-        address[20] validators;
+        //mapping (address => uint) pickedWinner;
+        //mapping (address => bool) isValidator;
+        //address[2] validators;
+        address validator;
         uint winner;
     }
 
@@ -38,22 +39,19 @@ contract Beth is Ownable {
         actualMatch.gameName = "Combat à main nus";
         actualMatch.team1 = "Hugo";
         actualMatch.team2 = "Gorille";
-        actualMatch.matchDate = 1612128600;
+        actualMatch.matchDate = 0;
         actualMatch.winner = 1;
         actualMatch.team1TotalBetAmount = 0;
         actualMatch.team2TotalBetAmount = 0;
+        actualMatch.validator = msg.sender;
     }
 
-    uint256 validatorMinimalStack = 1000000000000000000000; //1000 tokens
+    uint256 validatorMinimalStack = 999999999999999999999; //999.999 tokens
 
     //all validators
     mapping (address => uint256) public stackingBalance;
     mapping (address => bool) public isValidator;
     address[] public validators;
-
-    //validators on actual match
-    mapping (address => bool) public isValidatingActualMatch;
-    address[20] pickedValidators;
 
     ////////////////////////////////
     //    validators functions   //
@@ -68,6 +66,7 @@ contract Beth is Ownable {
             //become validator is enough stack
             if (!isValidator[msg.sender] && stackingBalance[msg.sender] > validatorMinimalStack) {
                 isValidator[msg.sender] = true;
+                validators.push(msg.sender);
             }
         }
     }
@@ -76,7 +75,7 @@ contract Beth is Ownable {
         require(_amount > 0, "amount cannot be 0");
         require(stackingBalance[msg.sender] >= _amount, "Amount can't be superior of staking balance");
 
-        if (bethToken.transferFrom(address(this), msg.sender, _amount)) {
+        if (bethToken.transfer(msg.sender, _amount)) {
             stackingBalance[msg.sender] -= _amount;
             if (isValidator[msg.sender] && stackingBalance[msg.sender] < validatorMinimalStack) {
                 isValidator[msg.sender] = false;
@@ -92,31 +91,7 @@ contract Beth is Ownable {
                 validators.push(oldValidators[i]);
             }
         }
-    }
-
-    function pickValidators() private returns (address[20] memory) {
-        uint random = randomFromBlock();
-        uint randomValidator;
-        for (uint i = 0; i < 20; i +=1) {
-            randomValidator = randomFromNumber(random);
-            while(isValidatingActualMatch[validators[randomValidator]]) {
-                randomValidator = randomFromNumber(random);
-            }
-            isValidatingActualMatch[validators[randomValidator]] = true;
-            pickedValidators[i] = validators[randomValidator];
-        }
-        return pickedValidators;
-    }
-
-    function randomFromBlock() private view returns (uint) {
-        uint randomHash = uint(keccak256(abi.encodePacked(block.timestamp, block.difficulty)));
-        return randomHash % validators.length;
-    }
-
-    function randomFromNumber(uint number) private view returns (uint) {
-        uint randomHash = uint(keccak256(abi.encodePacked(number, block.difficulty)));
-        return randomHash % validators.length;
-    }
+    } //todo check
 
     function punish(address _validator, uint _amount) private {
         stackingBalance[_validator] -= _amount; //punished for not voting
@@ -126,8 +101,8 @@ contract Beth is Ownable {
     }
 
     function rewardValidator(address _address, uint _totalBet) private {
-        uint amountForValidators = SafeMath.div(_totalBet, 20); //5% for validators
-        stackingBalance[_address] += SafeMath.div(amountForValidators, 20);
+        uint amountForValidators = SafeMath.div(_totalBet, 2); //5% for validators
+        stackingBalance[_address] += SafeMath.div(amountForValidators, 2);
     }
 
     ////////////////////////////////
@@ -141,6 +116,13 @@ contract Beth is Ownable {
         //valid match parameters
         require(_matchDate > block.timestamp + (6*TIME_AMOUNT), "This match starts to early !");
 
+//        if (actualMatch.matchDate > 0) { //reset validators only after first match to fix bug when deploying contract (because no validators when deploying)
+//            resetValidators();
+//        }
+//        else {
+//            pickValidators();
+//        }
+
         actualMatch.title = _title;
         actualMatch.gameName = _gameName;
         actualMatch.team1 = _team1;
@@ -149,63 +131,21 @@ contract Beth is Ownable {
         actualMatch.winner = 0;
         actualMatch.team1TotalBetAmount = 0;
         actualMatch.team2TotalBetAmount = 0;
-        resetValidators();
-    }
-
-    function resetValidators() private {
-        for (uint i = 0; i < 20; i += 1) {
-            actualMatch.pickedWinner[actualMatch.validators[i]] = 0;
-            actualMatch.isValidator[actualMatch.validators[i]] = false;
-        }
-        delete actualMatch.validators;
-        address[20] memory newValidators = pickValidators();
-        for (uint i = 0; i < 20; i += 1) {
-            actualMatch.validators[i] = newValidators[i];
-            actualMatch.isValidator[actualMatch.validators[i]] = true;
-        }
     }
 
     function pickWinner(uint _team) public {
-        require(actualMatch.isValidator[msg.sender], "You are not a validator for the pending match !");
+        require(actualMatch.validator == msg.sender, "You are not a validator for the pending match !");
+        require(actualMatch.winner == 0, "Winner already picked !");
         require(actualMatch.matchDate < block.timestamp + (6*TIME_AMOUNT), "You will be able to pick a winner 6 time_amount (see const declaration) after match started !");
         require(_team == 1 || _team == 2, "Please pick a valid team : team 1 or team 2 !");
-        require(actualMatch.pickedWinner[msg.sender] == 0, "You already voted !");
+        //require(actualMatch.pickedWinner[msg.sender] == 0, "You already voted !");
 
-        actualMatch.pickedWinner[msg.sender] = _team;
-    }
-
-    function finishMatch() public {
-        require(actualMatch.winner == 0, "Winner of this match already picked !");
-        require(actualMatch.matchDate < block.timestamp + (6*TIME_AMOUNT), "need to wait 6 TIME_AMOUNT so validators have time to pick winners !");
-
-        uint team1 = 0;
-        uint team2 = 0;
-        for (uint i = 0; i < 20; i += 1) {
-            if (actualMatch.pickedWinner[actualMatch.validators[i]] == 0) {
-                punish(actualMatch.validators[i], 50); //punish for not voting 50 tokens
-            }
-            else {
-                if (actualMatch.pickedWinner[actualMatch.validators[i]] == 1) team1 += 1;
-                else team2 += 1;
-            }
-        }
-
-        if (team1 >= team2) actualMatch.winner = 1; // no tie for the moment implemented in later updates
-        else actualMatch.winner = 2;
-
-        for (uint i = 0; i < 20; i += 1) {
-            if (actualMatch.pickedWinner[actualMatch.validators[i]] != actualMatch.winner) {
-                punish(actualMatch.validators[i], 100); //punish for not voting false 100 tokens
-            }
-            else {
-                rewardValidator(actualMatch.validators[i], actualMatch.team1TotalBetAmount + actualMatch.team2TotalBetAmount); //reward good voters with percentage of total bet
-            }
-        }
+        actualMatch.winner = _team;
     }
 
     function betOnTeam(uint _team, uint _amount) public {
         require(_team == 1 || _team == 2, "Please bet on a valid team !");
-        require(actualMatch.matchDate > block.timestamp + 1 hours, "it's to late to bet on this match !");
+        require(actualMatch.matchDate > block.timestamp + TIME_AMOUNT, "it's to late to bet on this match !");
         if (bethToken.transferFrom(msg.sender, address(this), _amount)) {
             if (_team == 1) {
                 actualMatch.team1TotalBetAmount += _amount;
@@ -221,22 +161,91 @@ contract Beth is Ownable {
     function getReward() public {
         require(actualMatch.winner != 0, "Winner not picked yet !");
         uint ratio;
-        uint amountForValidators;
+        //uint amountForValidators;
         uint deservedAmount;
         if (actualMatch.winner == 1) {
             require(actualMatch.team1UserBetAmount[msg.sender] > 0, "You bet 0 on the winner, no reward available !");
-            amountForValidators = actualMatch.team1TotalBetAmount / 20; //5% for validators
-            ratio = (actualMatch.team1TotalBetAmount - amountForValidators) / actualMatch.team1UserBetAmount[msg.sender];
-            deservedAmount = actualMatch.team2TotalBetAmount / ratio;
-            bethToken.transferFrom(address(this), msg.sender, deservedAmount);
+            //amountForValidators = actualMatch.team1TotalBetAmount / 20; //5% for validators
+            ratio = actualMatch.team1TotalBetAmount / actualMatch.team1UserBetAmount[msg.sender];
+            deservedAmount = actualMatch.team2TotalBetAmount / ratio + actualMatch.team1UserBetAmount[msg.sender];
+            bethToken.transfer(msg.sender, deservedAmount);
         }
         else {
             require(actualMatch.team2UserBetAmount[msg.sender] > 0, "You bet 0 on the winner, no reward available !");
-            amountForValidators = actualMatch.team2TotalBetAmount / 20; //5% for validators
-            ratio = (actualMatch.team2TotalBetAmount - amountForValidators) / actualMatch.team2UserBetAmount[msg.sender];
-            deservedAmount = actualMatch.team1TotalBetAmount / ratio;
-            bethToken.transferFrom(address(this), msg.sender, deservedAmount);
+            //amountForValidators = actualMatch.team2TotalBetAmount / 20; //5% for validators
+            ratio = actualMatch.team2TotalBetAmount / actualMatch.team2UserBetAmount[msg.sender];
+            deservedAmount = actualMatch.team1TotalBetAmount / ratio + actualMatch.team2UserBetAmount[msg.sender];
+            bethToken.transfer(msg.sender, deservedAmount);
         }
     }
+
+    function getValidator(uint _index) public view returns (address) {
+        return validators[_index];
+    }
+
+    ///////////////////
+    //  oracle      //
+    /////////////////
+
+    //    function pickValidators() private {
+    //        uint random = randomFromBlock();
+    //        uint randomValidator;
+    //        for (uint i = 0; i < 2; i +=1) {
+    //            randomValidator = randomFromNumber(random);
+    //            while(actualMatch.isValidator[validators[randomValidator]]) {
+    //                randomValidator = randomFromNumber(random);
+    //            }
+    //            actualMatch.isValidator[validators[randomValidator]] = true;
+    //            actualMatch.validators[i] = validators[randomValidator];
+    //        }
+    //    } //todo check
+
+    //    function randomFromBlock() private view returns (uint) {
+    //        uint randomHash = uint(keccak256(abi.encodePacked(block.timestamp, block.difficulty)));
+    //        return randomHash % 1000;
+    //    }
+    //
+    //    function randomFromNumber(uint number) private view returns (uint) {
+    //        uint randomHash = uint(keccak256(abi.encodePacked(number)));
+    //        return randomHash % validators.length;
+    //    }
+
+//    function resetValidators() private {
+//        for (uint i = 0; i < 2; i += 1) {
+//            actualMatch.pickedWinner[actualMatch.validators[i]] = 0;
+//            actualMatch.isValidator[actualMatch.validators[i]] = false;
+//        }
+//        delete actualMatch.validators;
+//        pickValidators();
+//    }
+
+//    function finishMatch() public {
+//        require(actualMatch.winner == 0, "Winner of this match already picked !");
+//        require(actualMatch.matchDate < block.timestamp + (6*TIME_AMOUNT), "need to wait 6 TIME_AMOUNT so validators have time to pick winners !");
+//
+//        uint team1 = 0;
+//        uint team2 = 0;
+//        for (uint i = 0; i < 2; i += 1) {
+//            if (actualMatch.pickedWinner[actualMatch.validators[i]] == 0) {
+//                punish(actualMatch.validators[i], 50); //punish for not voting 50 tokens
+//            }
+//            else {
+//                if (actualMatch.pickedWinner[actualMatch.validators[i]] == 1) team1 += 1;
+//                else team2 += 1;
+//            }
+//        }
+//
+//        if (team1 >= team2) actualMatch.winner = 1; // no tie for the moment implemented in later updates
+//        else actualMatch.winner = 2;
+//
+//        for (uint i = 0; i < 2; i += 1) {
+//            if (actualMatch.pickedWinner[actualMatch.validators[i]] != actualMatch.winner) {
+//                punish(actualMatch.validators[i], 100); //punish for not voting false 100 tokens
+//            }
+//            else {
+//                rewardValidator(actualMatch.validators[i], actualMatch.team1TotalBetAmount + actualMatch.team2TotalBetAmount); //reward good voters with percentage of total bet
+//            }
+//        }
+//    }
 
 }

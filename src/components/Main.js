@@ -1,5 +1,6 @@
 import React, {Component} from 'react'
 import bethLogo from '../eth-logo.png'
+import Result from "./Result";
 
 class Main extends Component {
 
@@ -99,6 +100,10 @@ class Main extends Component {
                             </div>
                             <button type="submit" className="btn btn-primary btn-block btn-lg">Bet!</button>
                         </form>
+
+                        <div className="text-center">
+                            <Result winner={this.props.actualMatch.winner} getReward={this.props.getReward}/>
+                        </div>
                     </div>
                 </div>
 
@@ -154,6 +159,27 @@ class Main extends Component {
 
                 <div className="card mb-4">
                     <div className="card-body">
+                        <h5 className="card-title text-center">Finish previous match (only owner)</h5>
+
+                        <form className="mb-3" onSubmit={(event) => {
+                            event.preventDefault()
+                            let winner
+                            winner = parseInt(this.winner.value.toString(), 10)
+                            this.props.pickWinner(winner)
+                        }}>
+                            <div className="input-group mb-4">
+                                <input
+                                    type="text"
+                                    ref={(winner) => {
+                                        this.winner = winner
+                                    }}
+                                    className="form-control form-control-lg"
+                                    placeholder="Team number winner"
+                                    required/>
+                            </div>
+                            <button type="submit" className="btn btn-primary btn-block btn-lg">Pick winner</button>
+                        </form>
+
                         <h5 className="card-title text-center">Create Match</h5>
 
                         <form className="mb-3" onSubmit={(event) => {
@@ -163,7 +189,7 @@ class Main extends Component {
                             gameName = this.gameName.value.toString()
                             team1 = this.team1.value.toString()
                             team2 = this.team2.value.toString()
-                            matchDate = parseInt(this.matchDate.toString(), 10) / 1000
+                            matchDate = parseInt(this.matchDate.value.toString(), 10)
                             this.props.createMatch(title, gameName, team1, team2, matchDate)
                         }}>
                             <div className="input-group mb-4">

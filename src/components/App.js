@@ -40,7 +40,7 @@ class App extends Component {
             let stackingBalance = await beth.methods.stackingBalance(this.state.account).call()
             this.setState({stackingBalance: stackingBalance.toString()})
             let actualMatch = await beth.methods.actualMatch().call()
-            this.setState({actualMatch:actualMatch})
+            this.setState({actualMatch: actualMatch})
         } else {
             window.alert('Beth contract not deployed to detected network.')
         }
@@ -63,7 +63,9 @@ class App extends Component {
         this.setState({loading: true})
         this.state.bethToken.methods.approve(this.state.beth._address, amount).send({from: this.state.account}).on('transactionHash', (hash) => {
             this.state.beth.methods.stackTokens(amount).send({from: this.state.account}).on('transactionHash', (hash) => {
-                this.setState({loading: false})
+                this.loadBlockchainData().then(r => {
+                    this.setState({loading: false})
+                })
             })
         })
     }
@@ -71,28 +73,27 @@ class App extends Component {
     unstackTokens = (amount) => {
         this.setState({loading: true})
         this.state.beth.methods.unstackTokens(amount).send({from: this.state.account}).on('transactionHash', (hash) => {
-            this.setState({loading: false})
+            this.loadBlockchainData().then(r => {
+                this.setState({loading: false})
+            })
         })
     }
 
     createMatch = (title, gameName, team1, team2, matchDate) => {
         this.setState({loading: true})
         this.state.beth.methods.createMatch(title, gameName, team1, team2, matchDate).send({from: this.state.account}).on('transactionHash', (hash) => {
-            this.setState({loading: false})
-        })
-    }
-
-    finishMatch = () => {
-        this.setState({loading: true})
-        this.state.methods.finishMatch().send({from: this.state.account}).on('transactionHash', (hash) => {
-            this.setState({loading: false})
+            this.loadBlockchainData().then(r => {
+                this.setState({loading: false})
+            })
         })
     }
 
     pickWinner = (teamNumber) => {
         this.setState({loading: true})
-        this.state.methods.pickWinner(teamNumber).send({from: this.state.account}).on('transactionHash', (hash) => {
-            this.setState({loading: false})
+        this.state.beth.methods.pickWinner(teamNumber).send({from: this.state.account}).on('transactionHash', (hash) => {
+            this.loadBlockchainData().then(r => {
+                this.setState({loading: false})
+            })
         })
     }
 
@@ -100,22 +101,19 @@ class App extends Component {
         this.setState({loading: true})
         this.state.bethToken.methods.approve(this.state.beth._address, amount).send({from: this.state.account}).on('transactionHash', (hash) => {
             this.state.beth.methods.betOnTeam(teamNumber, amount).send({from: this.state.account}).on('transactionHash', (hash) => {
-                this.setState({loading: false})
+                this.loadBlockchainData().then(r => {
+                    this.setState({loading: false})
+                })
             })
         })
     }
 
     getReward = () => {
         this.setState({loading: true})
-        this.state.methods.getReward().send({from: this.state.account}).on('transactionHash', (hash) => {
-            this.setState({loading: false})
-        })
-    }
-
-    reindex = () => {
-        this.setState({loading: true})
-        this.state.methods.reindex().send({from: this.state.account}).on('transactionHash', (hash) => {
-            this.setState({loading: false})
+        this.state.beth.methods.getReward().send({from: this.state.account}).on('transactionHash', (hash) => {
+            this.loadBlockchainData().then(r => {
+                this.setState({loading: false})
+            })
         })
     }
 
@@ -147,10 +145,12 @@ class App extends Component {
                 stackingBalance={this.state.stackingBalance}
                 actualMatch={this.state.actualMatch}
                 stackTokens={this.stackTokens}
-                unstackTokens={this.stackTokens}
+                unstackTokens={this.unstackTokens}
                 betOnTeam={this.betOnTeam}
                 createMatch={this.createMatch}
                 displayDate={this.displayDate}
+                pickWinner={this.pickWinner}
+                getReward={this.getReward}
             />
         }
 
